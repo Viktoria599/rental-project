@@ -60,10 +60,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'rental_project.wsgi.application'
 
-# БАЗА ДАННЫХ PostgreSQL (через переменные окружения)
 DATABASES = {
     'default': {
-        ENGINE': 'django.db.backends.sqlite3',
+        'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
