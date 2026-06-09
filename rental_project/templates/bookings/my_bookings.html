@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 style="margin-bottom: 24px;">Мои бронирования</h1>
+
+<!-- Фильтры -->
+<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;">
+    <a href="?status=active" class="btn" style="background: {% if current_filter == 'active' %}#2196f3{% else %}#e0e0e0{% endif %}; color: {% if current_filter == 'active' %}#fff{% else %}#333{% endif %}; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 13px;">
+        Активные {% if stats.active %}({{ stats.active }}){% endif %}
+    </a>
+    <a href="?status=pending" class="btn" style="background: {% if current_filter == 'pending' %}#ff9800{% else %}#e0e0e0{% endif %}; color: {% if current_filter == 'pending' %}#fff{% else %}#333{% endif %}; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 13px;">
+        Ожидают {% if stats.pending %}({{ stats.pending }}){% endif %}
+    </a>
+    <a href="?status=confirmed" class="btn" style="background: {% if current_filter == 'confirmed' %}#4caf50{% else %}#e0e0e0{% endif %}; color: {% if current_filter == 'confirmed' %}#fff{% else %}#333{% endif %}; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 13px;">
+        Подтверждены {% if stats.confirmed %}({{ stats.confirmed }}){% endif %}
+    </a>
+    <a href="?status=in_progress" class="btn" style="background: {% if current_filter == 'in_progress' %}#2196f3{% else %}#e0e0e0{% endif %}; color: {% if current_filter == 'in_progress' %}#fff{% else %}#333{% endif %}; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 13px;">
+        В процессе {% if stats.in_progress %}({{ stats.in_progress }}){% endif %}
+    </a>
+    <a href="?status=waiting_return" class="btn" style="background: {% if current_filter == 'waiting_return' %}#ff9800{% else %}#e0e0e0{% endif %}; color: {% if current_filter == 'waiting_return' %}#fff{% else %}#333{% endif %}; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 13px;">
+        Возврат {% if stats.waiting_return %}({{ stats.waiting_return }}){% endif %}
+    </a>
+    <a href="?status=completed" class="btn" style="background: {% if current_filter == 'completed' %}#9e9e9e{% else %}#e0e0e0{% endif %}; color: {% if current_filter == 'completed' %}#fff{% else %}#333{% endif %}; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 13px;">
+        Завершены {% if stats.completed %}({{ stats.completed }}){% endif %}
+    </a>
+    <a href="?status=cancelled" class="btn" style="background: {% if current_filter == 'cancelled' %}#f44336{% else %}#e0e0e0{% endif %}; color: {% if current_filter == 'cancelled' %}#fff{% else %}#333{% endif %}; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 13px;">
+        Отменены {% if stats.cancelled %}({{ stats.cancelled }}){% endif %}
+    </a>
+    <a href="?status=disputed" class="btn" style="background: {% if current_filter == 'disputed' %}#f44336{% else %}#e0e0e0{% endif %}; color: {% if current_filter == 'disputed' %}#fff{% else %}#333{% endif %}; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 13px;">
+        Споры {% if stats.disputed %}({{ stats.disputed }}){% endif %}
+    </a>
+    <a href="?status=all" class="btn" style="background: {% if current_filter == 'all' %}#3B3B3B{% else %}#e0e0e0{% endif %}; color: {% if current_filter == 'all' %}#fff{% else %}#333{% endif %}; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 13px;">
+        Все
+    </a>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 20px;">
+    {% for booking in bookings %}
+    <div class="card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0;">{{ booking.item.name }}</h3>
+            <span style="background:
+                {% if booking.status == 'pending' %}#ff9800
+                {% elif booking.status == 'confirmed' %}#4caf50
+                {% elif booking.status == 'active' %}#2196f3
+                {% elif booking.status == 'in_progress' %}#2196f3
+                {% elif booking.status == 'waiting_return' %}#ff9800
+                {% elif booking.status == 'completed' %}#9e9e9e
+                {% elif booking.status == 'disputed' %}#f44336
+                {% else %}#f44336{% endif %};
+                color: white; padding: 5px 12px; border-radius: 20px; font-size: 13px;">
+                {{ booking.get_status_display }}
+            </span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+            <p style="margin: 0;"><strong>Владелец:</strong> {{ booking.item.owner.get_full_name|default:booking.item.owner.username }}</p>
+            <p style="margin: 0;"><strong>Дата и время:</strong> {{ booking.start_datetime|date:"d.m.Y H:i" }} — {{ booking.end_datetime|date:"d.m.Y H:i" }}</p>
+            <p style="margin: 0;"><strong>Сумма аренды:</strong> {{ booking.total_amount|floatformat:2 }} ₽</p>
+            <p style="margin: 0;"><strong>Залог:</strong> {{ booking.deposit_amount }} ₽</p>
+            <p style="margin: 0;"><strong>Создано:</strong> {{ booking.created_at|date:"d.m.Y H:i" }}</p>
+        </div>
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <a href="{% url 'bookings:booking_detail' booking.id %}" class="btn">Подробнее</a>
+
+            {% if booking.status == 'pending' and user == booking.renter %}
+                <a href="{% url 'bookings:cancel_booking' booking.id %}"  class="btn" style="background: #dc3545;" onclick="return confirm('Отменить бронирование?')">Отменить</a>
+            {% endif %}
+
+            {% if booking.status == 'active' and not booking.renter_received %}
+                <a href="{% url 'bookings:confirm_receipt' booking.id %}" class="btn" style="background: #4caf50;" onclick="return confirm('Подтверждаете получение вещи?')">Получил вещь</a>
+            {% endif %}
+
+            {% if booking.status == 'in_progress' %}
+                <span class="btn" style="background: #2196f3;">В процессе аренды</span>
+                <a href="{% url 'bookings:return_booking' booking.id %}" class="btn" style="background: #4caf50;" onclick="return confirm('Вы подтверждаете возврат вещи?')">Вернул вещь</a>
+            {% endif %}
+
+            {% if booking.status == 'waiting_return' %}
+                <span class="btn" style="background: #ff9800;">Ожидает проверки владельцем</span>
+            {% endif %}
+
+            {% if booking.status == 'disputed' %}
+                <a href="{% url 'bookings:dispute_detail' booking.id %}" class="btn" style="background: #f44336;">Спор</a>
+            {% endif %}
+
+            <a href="/chat/{{ booking.id }}/" class="btn" style="background: #6c757d;">Чат</a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card"; style="text-align: center; padding: 60px; background:#FFFFFF;">
+        <p style="margin: 0; color: #888;">Нет бронирований с этим статусом</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

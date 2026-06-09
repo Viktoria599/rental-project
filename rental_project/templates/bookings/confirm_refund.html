@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2>Подтверждение возврата залога</h2>
+        
+        <div style="background: #f8f9fa; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+            <p><strong>Вещь:</strong> {{ booking.item.name }}</p>
+            <p><strong>Владелец:</strong> {{ booking.item.owner.get_full_name|default:booking.item.owner.username }}</p>
+            <p><strong>Сумма залога:</strong> {{ booking.deposit_amount|floatformat:2 }} ₽</p>
+            <p><strong>Дата возврата:</strong> {{ booking.refund_confirmed_at|date:"d.m.Y H:i"|default:"не указана" }}</p>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div style="display: flex; gap: 16px; flex-direction: column;">
+                <button type="submit" name="decision" value="confirm" class="btn" style="background: #4caf50;">
+                    Залог поступил
+                </button>
+                <button type="submit" name="decision" value="failed" class="btn" style="background: #dc3545;" onclick="return confirm('Вы уверены? Это откроет спор.')">
+                    Залог не вернули
+                </button>
+                <a href="{% url 'bookings:my_bookings' %}" class="btn-outline" style="text-align: center;">← Назад</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

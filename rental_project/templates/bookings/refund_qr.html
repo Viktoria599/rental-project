@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 0 auto;">
+    <div class="card">
+        <h2>Возврат залога</h2>
+        <p>Вещь: <strong>{{ booking.item.name }}</strong></p>
+        <p>Сумма к возврату: <strong>{{ amount|floatformat:2 }} ₽</strong></p>
+        <p>Получатель: <strong>{{ recipient_name }}</strong></p>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <img src="{{ qr_image_url }}" alt="QR-код для возврата" style="max-width: 200px;">
+            <p>Отсканируйте QR-код в приложении вашего банка</p>
+            <p style="font-size: 12px; color: #666;">Переведите сумму залога арендатору</p>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn" style="width: 100%; background: #A5AFF5;">
+                ✅ Готово, я перевёл(а) залог
+            </button>
+        </form>
+        
+        <div style="margin-top: 20px;">
+            <a href="{% url 'bookings:owner_bookings' %}" class="btn-outline" style="display: block; text-align: center; padding: 10px;">
+                ← Назад к заявкам
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

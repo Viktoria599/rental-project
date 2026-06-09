@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <h2>Детали бронирования</h2>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; margin: 20px 0;">
+        <p style="margin: 0;"><strong>Вещь:</strong> <a href="/items/{{ booking.item.id }}/">{{ booking.item.name }}</a></p>
+        <p style="margin: 0;"><strong>Арендатор:</strong>  {{ booking.renter.username }}</p>
+        <p style="margin: 0;"><strong>Владелец:</strong> {{ booking.item.owner.username }}</p>
+        <p style="margin: 0;"><strong>Дата и время начала:</strong> {{ booking.start_datetime|date:"d.m.Y H:i" }}</p>
+        <p style="margin: 0;"><strong>Дата и время окончания:</strong> {{ booking.end_datetime|date:"d.m.Y H:i" }}</p>
+        <p style="margin: 0;"><strong>Статус:</strong>
+            <span style="background:
+                {% if booking.status == 'pending' %}#ff9800
+                {% elif booking.status == 'confirmed' %}#4caf50
+                {% elif booking.status == 'active' %}#2196f3
+                {% elif booking.status == 'in_progress' %}#2196f3
+                {% elif booking.status == 'waiting_return' %}#ff9800
+                {% elif booking.status == 'completed' %}#4caf50
+                {% elif booking.status == 'disputed' %}#f44336
+                {% elif booking.status == 'cancelled' %}#9e9e9e
+                {% elif booking.status == 'rejected' %}#f44336
+                {% else %}#9e9e9e{% endif %};
+                color: white; padding: 5px 10px; border-radius: 5px;">
+                {{ booking.get_status_display }}
+            </span>
+        </p>
+        <p style="margin: 0;"><strong>Сумма аренды:</strong> {{ booking.total_amount }} ₽</p>
+        <p style="margin: 0;"><strong>Залог:</strong> {{ booking.deposit_amount }} ₽</p>
+        <p style="margin: 0;"><strong>Создано:</strong> {{ booking.created_at|date:"d.m.Y H:i" }}</p>
+    </div>
+
+    <div style="display: flex; gap: 16px; margin-top: 24px; flex-wrap: wrap;">
+        <a href="/chat/{{ booking.id }}/" class="btn">Перейти в чат</a>
+
+        {% if booking.status == 'pending' and user == booking.renter %}
+            <a href="/bookings/cancel/{{ booking.id }}/" class="btn" style="background: #dc3545;" onclick="return confirm('Отменить бронирование?')">Отменить</a>
+        {% endif %}
+
+        {% if booking.status == 'pending' and user == booking.item.owner %}
+            <a href="{% url 'bookings:confirm_booking' booking.id %}" class="btn" style="background: #4caf50;">Подтвердить</a>
+            <a href="{% url 'bookings:reject_booking' booking.id %}" class="btn" style="background: #dc3545;">Отклонить</a>
+        {% endif %}
+
+        {% if booking.status == 'active' and not booking.renter_received %}
+            <a href="{% url 'bookings:confirm_receipt' booking.id %}" class="btn" style="background: #4caf50;" onclick="return confirm('Подтверждаете получение вещи?')">Получил вещь</a>
+        {% endif %}
+
+        {% if booking.status == 'in_progress' and user == booking.renter %}
+            <a href="{% url 'bookings:return_booking' booking.id %}" class="btn" style="background: #4caf50;" onclick="return confirm('Вы подтверждаете возврат вещи?')">Вернул вещь</a>
+        {% endif %}
+
+        {% if booking.status == 'waiting_return' and user == booking.item.owner %}
+            <a href="{% url 'bookings:confirm_return_no_damage' booking.id %}" class="btn" style="background: #4caf50;" onclick="return confirm('Всё в порядке? Повреждений нет?')">Всё ок, вернуть залог</a>
+            <a href="{% url 'bookings:report_damage' booking.id %}" class="btn" style="background: #dc3545;">Есть повреждения</a>
+        {% endif %}
+
+        {% if booking.status == 'disputed' %}
+            <a href="{% url 'bookings:dispute_detail' booking.id %}" class="btn" style="background: #ff9800;">Спор</a>
+        {% endif %}
+
+        {% if booking.status == 'completed' %}
+            {% if user == booking.renter %}
+                {% if not booking.review_given_by_renter %}
+                    <a href="{% url 'leave_review' username=booking.item.owner.username %}?booking={{ booking.id }}" class="btn" style="background: #ffc107; color: #333;">
+                        Оставить отзыв владельцу
+                    </a>
+                {% else %}
+                    <span class="btn" style="background: #ccc; cursor: default;">Отзыв владельцу уже оставлен</span>
+                {% endif %}
+            {% endif %}
+
+            {% if user == booking.item.owner %}
+                {% if not booking.review_given_by_owner %}
+                    <a href="{% url 'leave_review' username=booking.renter.username %}?booking={{ booking.id }}" class="btn" style="background: #ffc107; color: #333;">
+                        Оставить отзыв арендатору
+                    </a>
+                {% else %}
+                    <span class="btn" style="background: #ccc; cursor: default;">Отзыв арендатору уже оставлен</span>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+
+        <a href="
+            {% if user == booking.renter %}
+                {% url 'bookings:my_bookings' %}
+            {% else %}
+                {% url 'bookings:owner_bookings' %}
+            {% endif %}
+        " class="btn" style="background: #6c757d;">Назад</a>
+    </div>
+</div>
+{% endblock %}

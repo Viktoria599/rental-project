@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<div class="search-card">
+    <form method="get" class="search-form">
+        <div class="search-input-group">
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" class="search-input" placeholder="Что ищете?" value="{{ request.GET.search }}">
+        </div>
+        <select name="category" class="category-select">
+            <option value="">Все категории</option>
+            {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"s" %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="search-btn">Найти</button>
+        {% if request.GET.search or request.GET.category %}
+            <a href="{% url 'items:catalog' %}" class="search-btn" style="background: #dc3545; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Сбросить</a>
+        {% endif %}
+    </form>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <h1>Каталог</h1>
+    <span style="color: #888; opacity: 0.6;">{{ items.count }} вещей</span>
+</div>
+
+{% if items %}
+<div class="items-grid">
+    {% for item in items %}
+    <div class="card">
+        <div class="card-image">
+            {% if item.main_photo %}
+                <img src="{{ item.main_photo.url }}" alt="{{ item.name }}">
+            {% else %}
+                <i class="fas fa-box"></i>
+            {% endif %}
+        </div>
+        <div class="card-content">
+            <h3 class="card-title">{{ item.name }}</h3>
+            <p class="card-city">
+                <i class="fas fa-map-marker-alt"></i> {{ item.city }}
+            </p>
+            <p class="card-price">
+                {{ item.price_per_hour }} ₽<span class="card-price-unit">/час</span>
+            </p>
+            <a href="/items/{{ item.id }}/" class="btn btn-detail">Подробнее →</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="fas fa-box-open"></i>
+    <p>Ничего не найдено</p>
+    {% if user.is_authenticated %}
+        <a href="/items/my-items/" class="btn-add" style="text-decoration: none; display: inline-flex;">Добавить вещь</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<style>
+    .items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+        align-items: stretch;
+    }
+    
+    .card {
+        background: #FCFAFA;
+        border-radius: 20px;
+        transition: all 0.2s ease;
+        border: 1px solid #ECECEC;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+        border-color: #ECCACB;
+    }
+    
+    .card-image {
+        height: 180px;
+        background: #ECECEC;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    
+    .card-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .card-image i {
+        font-size: 48px;
+        color: #3B3B3B;
+        opacity: 0.3;
+    }
+    
+    .card-content {
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .card-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #3B3B3B;
+        min-height: 48px;
+    }
+    
+    .card-city {
+        font-size: 13px;
+        color: #3B3B3B;
+        opacity: 0.6;
+        margin-bottom: 12px;
+        flex-shrink: 0;
+    }
+    
+    .card-price {
+        font-size: 20px;
+        font-weight: 700;
+        color: #3B3B3B;
+        margin: 12px 0;
+        flex-shrink: 0;
+    }
+    
+    .card-price-unit {
+        font-size: 13px;
+        font-weight: 400;
+        opacity: 0.6;
+    }
+    
+    .btn-detail {
+        width: 100%;
+        justify-content: center;
+        background: #3B3B3B;
+        color: #FCFAFA;
+        padding: 10px 20px;
+        border-radius: 40px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+        margin-top: auto;
+    }
+    
+    .btn-detail:hover {
+        background: #ECCACB;
+        color: #3B3B3B;
+        transform: translateY(-1px);
+    }
+    
+    .search-card {
+        background: #FCFAFA;
+        border-radius: 20px;
+        padding: 20px;
+        margin-bottom: 40px;
+        border: 1px solid #ECECEC;
+    }
+    
+    .search-form {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .search-input-group {
+        flex: 2;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #FCFAFA;
+        border-radius: 60px;
+        padding: 4px 20px;
+        border: 1px solid #ECECEC;
+    }
+    
+    .search-input-group i {
+        color: #3B3B3B;
+        opacity: 0.4;
+    }
+    
+    .search-input {
+        flex: 1;
+        border: none;
+        padding: 14px 0;
+        font-size: 15px;
+        outline: none;
+        background: transparent;
+        color: #3B3B3B;
+    }
+    
+    .search-input::placeholder {
+        color: #3B3B3B;
+        opacity: 0.4;
+    }
+    
+    .category-select {
+        flex: 1;
+        padding: 14px 20px;
+        border: 1px solid #ECECEC;
+        border-radius: 60px;
+        font-size: 14px;
+        outline: none;
+        background: #FCFAFA;
+        cursor: pointer;
+        color: #3B3B3B;
+    }
+    
+    .search-btn {
+        background: #3B3B3B;
+        border: none;
+        padding: 14px 32px;
+        border-radius: 60px;
+        color: #FCFAFA;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .search-btn:hover {
+        background: #ECCACB;
+        color: #3B3B3B;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #FCFAFA;
+        border: 1px solid #ECECEC;
+        border-radius: 24px;
+    }
+    
+    .empty-state i {
+        font-size: 64px;
+        color: #ECECEC;
+        margin-bottom: 20px;
+    }
+    
+    .empty-state p {
+        margin-bottom: 24px;
+        color: #3B3B3B;
+        opacity: 0.6;
+    }
+    
+    .btn-add {
+        background: #3B3B3B;
+        color: #FCFAFA;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 40px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+    
+    .btn-add:hover {
+        background: #ECCACB;
+        color: #3B3B3B;
+        text-decoration: none;
+    }
+    
+    @media (max-width: 768px) {
+        .search-form {
+            flex-direction: column;
+        }
+        .search-input-group, .category-select, .search-btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Сообщить о повреждении - TempThings{% endblock %}
+
+{% block breadcrumb %}
+<a href="/bookings/owner/">Заявки на мои вещи</a> › {{ booking.item.name }} › Повреждение
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2 style="margin-bottom: 8px;">Сообщить о повреждении</h2>
+        <p style="color: #666; margin-bottom: 24px;">Вещь: <strong>{{ booking.item.name }}</strong></p>
+        
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Описание повреждений *</label>
+                <textarea name="damage_description" required 
+                          style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; min-height: 120px; font-family: inherit; font-size: 14px;"
+                          placeholder="Опишите какие повреждения обнаружены..."></textarea>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px;">Фото (необязательно)</label>
+                    <input type="file" name="damage_photo" accept="image/*"
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 12px; font-size: 13px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px;">Видео (необязательно)</label>
+                    <input type="file" name="damage_video" accept="video/*"
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 12px; font-size: 13px;">
+                </div>
+            </div>
+            
+            <div style="background: #fff3e0; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px;">
+                <p style="margin: 0; font-size: 13px; color: #e65100;">
+                    Спор будет рассмотрен в течение 24 часов. Залог <strong>{{ booking.deposit_amount|floatformat:2 }} ₽</strong> будет удержан до решения.
+                </p>
+            </div>
+            
+            <div style="display: flex; gap: 12px;">
+                <button type="submit" class="btn" style="background: #dc3545; flex: 1; justify-content: center;">Отправить жалобу</button>
+                <a href="/bookings/owner/" class="btn-outline" style="text-decoration: none;">Назад</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

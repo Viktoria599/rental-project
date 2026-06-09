@@ -1,0 +1,510 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="profile-container">
+    
+    <!-- ВЕРХНЯЯ КАРТОЧКА ПРОФИЛЯ -->
+    <div class="profile-card">
+        <div class="avatar">
+            {{ reviewed_user.email|first|upper }}
+        </div>
+        <h1>{{ reviewed_user.get_full_name|default:reviewed_user.username }}</h1>
+        <p class="profile-email">{{ reviewed_user.email }}</p>
+        <p class="profile-contact">{{ reviewed_user.phone|default:"Телефон не указан" }} | {{ reviewed_user.city|default:"Город не указан" }}</p>
+        
+        {% if user == reviewed_user %}
+            <a href="{% url 'profile_edit' %}" class="edit-profile-btn">Редактировать профиль</a>
+        {% endif %}
+    </div>
+    
+    <!-- СТАТИСТИКА -->
+    <div class="stats-grid">
+        <div class="stat-card-mini">
+            <div class="stat-value">{{ reviewed_user.average_rating|default:"0" }}</div>
+            <div class="stat-label">Рейтинг</div>
+        </div>
+        <div class="stat-card-mini">
+            <div class="stat-value">{{ reviewed_user.reviews_received.count }}</div>
+            <div class="stat-label">Отзывов</div>
+        </div>
+        <div class="stat-card-mini">
+            <div class="stat-value">{{ reviewed_user.total_listings|default:"0" }}</div>
+            <div class="stat-label">Объявлений</div>
+        </div>
+        <div class="stat-card-mini">
+            <div class="stat-value">{{ reviewed_user.total_rentals|default:"0" }}</div>
+            <div class="stat-label">Аренд</div>
+        </div>
+    </div>
+    
+    <!-- БЫСТРЫЕ ДЕЙСТВИЯ (только для своего профиля) -->
+    {% if user == reviewed_user %}
+    <div class="quick-actions-section">
+        <h3>Быстрые действия</h3>
+        <div class="quick-actions-grid">
+            <a href="/items/my-items/" class="action-btn">Мои вещи</a>
+            <a href="/bookings/my/" class="action-btn">Мои бронирования</a>
+            <a href="/bookings/owner/" class="action-btn">Заявки на мои вещи</a>
+            <a href="/chat/" class="action-btn">Чаты</a>
+            <a href="/logout/" class="action-btn action-red">Выйти</a>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- ИНФОРМАЦИЯ О ПОЛЬЗОВАТЕЛЕ -->
+    <div class="info-section">
+        <h3>Информация</h3>
+        <div class="info-list">
+            <p><strong>Дата регистрации:</strong> {{ reviewed_user.date_joined|date:"d.m.Y" }}</p>
+            <p><strong>Последний вход:</strong> {{ reviewed_user.last_login|date:"d.m.Y H:i" }}</p>
+        </div>
+    </div>
+    
+    <!-- БЛОК ОТЗЫВОВ -->
+    <div class="reviews-section">
+        <div class="reviews-header">
+            <h3>Отзывы о пользователе</h3>
+            {% if user != reviewed_user and user.is_authenticated %}
+                <a href="{% url 'leave_review' username=reviewed_user.username %}" class="write-review-btn">Написать отзыв</a>
+            {% endif %}
+        </div>
+        
+        <div class="reviews-summary">
+            Всего отзывов: <strong>{{ reviewed_user.reviews_received.count }}</strong>
+            {% if reviewed_user.reviews_received.count > 0 %}
+                | Средний рейтинг: <strong>{{ reviewed_user.average_rating|default:"0" }}/5</strong>
+            {% endif %}
+        </div>
+        
+        {% if reviewed_user.reviews_received.all %}
+            <div class="reviews-list">
+                {% for review in reviewed_user.reviews_received.all %}
+                    <div class="review-item">
+                        <div class="review-meta">
+                            <div>
+                                <strong>
+                                    <a href="{% url 'profile' username=review.reviewer.username %}" class="reviewer-name">
+                                        {{ review.reviewer.get_full_name|default:review.reviewer.username }}
+                                    </a>
+                                </strong>
+                                <span class="review-date">{{ review.created_at|date:"d.m.Y" }}</span>
+                            </div>
+                            <div class="review-rating">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= review.rating %}
+                                        ★
+                                    {% else %}
+                                        ☆
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="rating-number">({{ review.rating }}/5)</span>
+                            </div>
+                        </div>
+                        <p class="review-comment">{{ review.comment|default:"Без комментария" }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-reviews">
+                <p>У пользователя пока нет отзывов</p>
+                {% if user != reviewed_user and user.is_authenticated %}
+                    <p class="subtext">Будьте первым, кто оставит отзыв!</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    
+</div>
+
+<style>
+    /* Основной контейнер */
+    .profile-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    /* Верхняя карточка */
+    .profile-card {
+        background: #FFFFFF;
+        border-radius: 24px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        border: 1px solid #E8E9D6;
+        margin-bottom: 24px;
+    }
+    
+    .avatar {
+        width: 100px;
+        height: 100px;
+        background: #A5AFF5;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-size: 48px;
+        font-weight: bold;
+        color: #FFFFFF;
+        box-shadow: 0 4px 12px rgba(165,175,245,0.3);
+    }
+    
+    .profile-card h1 {
+        margin-bottom: 8px;
+        color: #2D2D2D;
+        font-size: 28px;
+    }
+    
+    .profile-email {
+        color: #6B6B6B;
+        margin-bottom: 5px;
+    }
+    
+    .profile-contact {
+        color: #6B6B6B;
+        margin-bottom: 5px;
+    }
+    
+    .edit-profile-btn {
+        display: inline-block;
+        background: #F7F7E7;
+        color: #A5AFF5;
+        padding: 10px 28px;
+        border-radius: 40px;
+        text-decoration: none;
+        margin-top: 20px;
+        font-weight: 600;
+        transition: all 0.2s;
+        border: 1px solid #D0D2C0;
+    }
+    
+    .edit-profile-btn:hover {
+        background: #A5AFF5;
+        color: #FFFFFF;
+        border-color: #A5AFF5;
+    }
+    
+    /* Статистика */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .stat-card-mini {
+        background: #FFFFFF;
+        border-radius: 20px;
+        padding: 20px;
+        text-align: center;
+        border: 1px solid #E8E9D6;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    
+    .stat-value {
+        font-size: 32px;
+        font-weight: 800;
+        color: #A5AFF5;
+    }
+    
+    .stat-label {
+        color: #6B6B6B;
+        font-size: 13px;
+        margin-top: 5px;
+    }
+    
+    /* Быстрые действия */
+    .quick-actions-section {
+        background: #FFFFFF;
+        border-radius: 24px;
+        padding: 28px;
+        margin-bottom: 24px;
+        border: 1px solid #E8E9D6;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    
+    .quick-actions-section h3 {
+        margin-bottom: 20px;
+        color: #2D2D2D;
+    }
+    
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+    }
+    
+    .action-btn {
+        display: block;
+        padding: 12px 20px;
+        background: #F7F7E7;
+        border: 1px solid #D0D2C0;
+        border-radius: 12px;
+        text-decoration: none;
+        color: #2D2D2D;
+        font-weight: 500;
+        text-align: center;
+        transition: all 0.2s;
+    }
+    
+    .action-btn:hover {
+        background: #A5AFF5;
+        color: #FFFFFF;
+        border-color: #A5AFF5;
+    }
+    
+    .action-red {
+        background: #FFEBEE;
+        border-color: #FFCDD2;
+        color: #C62828;
+    }
+    
+    .action-red:hover {
+        background: #C62828;
+        color: #FFFFFF;
+        border-color: #C62828;
+    }
+    
+    /* Информация */
+    .info-section {
+        background: #FFFFFF;
+        border-radius: 24px;
+        padding: 28px;
+        margin-bottom: 24px;
+        border: 1px solid #E8E9D6;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    
+    .info-section h3 {
+        margin-bottom: 20px;
+        color: #2D2D2D;
+    }
+    
+    .info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .info-list p {
+        margin: 0;
+        color: #6B6B6B;
+    }
+    
+    /* Отзывы */
+    .reviews-section {
+        background: #FFFFFF;
+        border-radius: 24px;
+        padding: 28px;
+        border: 1px solid #E8E9D6;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    
+    .reviews-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+    }
+    
+    .reviews-header h3 {
+        margin: 0;
+        color: #2D2D2D;
+    }
+    
+    .write-review-btn {
+        background: #A5AFF5;
+        color: #FFFFFF;
+        padding: 10px 24px;
+        border-radius: 40px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .write-review-btn:hover {
+        background: #8F9AED;
+    }
+    
+    .reviews-summary {
+        color: #6B6B6B;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #E8E9D6;
+    }
+    
+    .reviews-summary strong {
+        color: #A5AFF5;
+    }
+    
+    .reviews-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .review-item {
+        border-bottom: 1px solid #E8E9D6;
+        padding-bottom: 16px;
+    }
+    
+    .review-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    
+    .reviewer-name {
+        color: #A5AFF5;
+        text-decoration: none;
+    }
+    
+    .reviewer-name:hover {
+        text-decoration: underline;
+    }
+    
+    .review-date {
+        margin-left: 12px;
+        font-size: 12px;
+        color: #B0B2A0;
+    }
+    
+    .review-rating {
+        color: #FFB800;
+    }
+    
+    .rating-number {
+        color: #6B6B6B;
+        margin-left: 5px;
+    }
+    
+    .review-comment {
+        margin: 10px 0 0 0;
+        color: #6B6B6B;
+        line-height: 1.5;
+    }
+    
+    .empty-reviews {
+        text-align: center;
+        padding: 50px 20px;
+        background: #F7F7E7;
+        border-radius: 20px;
+        border: 1px solid #E8E9D6;
+    }
+    
+    .empty-reviews p {
+        color: #A5AFF5;
+        font-size: 16px;
+        font-weight: 500;
+        margin: 0;
+    }
+    
+    .empty-reviews .subtext {
+        color: #B0B2A0;
+        font-size: 13px;
+        margin-top: 8px;
+    }
+    
+    /* ===== МОБИЛЬНАЯ АДАПТАЦИЯ ===== */
+    @media (max-width: 600px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .stat-card-mini {
+            padding: 16px;
+        }
+        
+        .stat-value {
+            font-size: 26px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+        }
+        
+        .profile-card {
+            padding: 24px;
+        }
+        
+        .profile-card h1 {
+            font-size: 22px;
+        }
+        
+        .avatar {
+            width: 80px;
+            height: 80px;
+            font-size: 38px;
+        }
+        
+        .quick-actions-section {
+            padding: 20px;
+        }
+        
+        .quick-actions-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .action-btn {
+            padding: 10px 16px;
+            font-size: 14px;
+        }
+        
+        .info-section {
+            padding: 20px;
+        }
+        
+        .reviews-section {
+            padding: 20px;
+        }
+        
+        .reviews-header {
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        
+        .review-meta {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .review-date {
+            margin-left: 0;
+        }
+        
+        .edit-profile-btn {
+            padding: 8px 20px;
+            font-size: 14px;
+        }
+        
+        .write-review-btn {
+            padding: 8px 20px;
+            font-size: 14px;
+        }
+    }
+    
+    @media (max-width: 380px) {
+        .stats-grid {
+            gap: 8px;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+        }
+        
+        .stat-label {
+            font-size: 10px;
+        }
+        
+        .stat-card-mini {
+            padding: 12px;
+        }
+    }
+</style>
+{% endblock %}

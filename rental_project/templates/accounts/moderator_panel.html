@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Панель модератора - TempThings{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto;">
+    <h1 style="margin-bottom: 32px; color: #2D2D2D; font-size: 28px; font-weight: 700;">Панель модератора</h1>
+    
+    <!-- Активные споры (на рассмотрении) -->
+    <div style="background: #FFFFFF; border-radius: 20px; padding: 24px; margin-bottom: 32px; border: 1px solid #E8E9D6;">
+        <h2 style="margin-bottom: 20px; color: #2D2D2D; font-size: 18px; font-weight: 600;">Активные споры</h2>
+        
+        {% if disputes %}
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                {% for dispute in disputes %}
+                <div style="border: 1px solid #E8E9D6; border-radius: 16px; padding: 20px; background: #F9F9F5;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 12px;">
+                                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #2D2D2D;">{{ dispute.item.name }}</h3>
+                                <span style="background: #FFF3E0; color: #ED6C02; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">Ожидает решения</span>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px;">
+                                <div>
+                                    <span style="color: #6B6B6B; font-size: 13px;">Арендатор</span>
+                                    <p style="margin: 4px 0 0 0; font-weight: 500; color: #2D2D2D;">{{ dispute.renter.get_full_name|default:dispute.renter.username }}</p>
+                                </div>
+                                <div>
+                                    <span style="color: #6B6B6B; font-size: 13px;">Владелец</span>
+                                    <p style="margin: 4px 0 0 0; font-weight: 500; color: #2D2D2D;">{{ dispute.item.owner.get_full_name|default:dispute.item.owner.username }}</p>
+                                </div>
+                                <div>
+                                    <span style="color: #6B6B6B; font-size: 13px;">Залог</span>
+                                    <p style="margin: 4px 0 0 0; font-weight: 700; color: #A5AFF5;">{{ dispute.deposit_amount }} ₽</p>
+                                </div>
+                                <div>
+                                    <span style="color: #6B6B6B; font-size: 13px;">Дата спора</span>
+                                    <p style="margin: 4px 0 0 0; color: #6B6B6B;">{{ dispute.dispute_created_at|date:"d.m.Y H:i" }}</p>
+                                </div>
+                            </div>
+                            
+                            <div style="background: #F0F0F0; padding: 12px; border-radius: 12px; margin-top: 8px;">
+                                <span style="color: #6B6B6B; font-size: 12px;">Описание проблемы</span>
+                                <p style="margin: 6px 0 0 0; color: #2D2D2D; font-size: 14px;">{{ dispute.damage_description|default:"Не указано"|truncatechars:150 }}</p>
+                            </div>
+                        </div>
+                        <div style="flex-shrink: 0;">
+                            <a href="{% url 'resolve_dispute' dispute.id %}" style="background: #A5AFF5; color: #FFFFFF; text-decoration: none; padding: 10px 28px; border-radius: 40px; display: inline-block; font-weight: 600; font-size: 14px; transition: all 0.2s;">
+                                Рассмотреть
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 60px 20px;">
+                <div style="font-size: 48px; margin-bottom: 12px;"></div>
+                <p style="color: #6B6B6B; margin: 0; font-size: 15px;">Нет активных споров</p>
+                <p style="color: #B0B2A0; font-size: 13px; margin-top: 6px;">Все споры рассмотрены</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- История решённых споров -->
+    {% if resolved_disputes %}
+    <div style="background: #FFFFFF; border-radius: 20px; padding: 24px; border: 1px solid #E8E9D6;">
+        <h2 style="margin-bottom: 20px; color: #2D2D2D; font-size: 18px; font-weight: 600;">История решённых споров</h2>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead>
+                    <tr style="border-bottom: 1px solid #E8E9D6;">
+                        <th style="padding: 14px 12px; text-align: left; font-weight: 600; color: #2D2D2D;">Вещь</th>
+                        <th style="padding: 14px 12px; text-align: left; font-weight: 600; color: #2D2D2D;">Стороны</th>
+                        <th style="padding: 14px 12px; text-align: left; font-weight: 600; color: #2D2D2D;">Решение</th>
+                        <th style="padding: 14px 12px; text-align: left; font-weight: 600; color: #2D2D2D;">Дата</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dispute in resolved_disputes %}
+                    <tr style="border-bottom: 1px solid #F0F0F0;">
+                        <td style="padding: 14px 12px; color: #2D2D2D; font-weight: 500;">{{ dispute.item.name }}</td>
+                        <td style="padding: 14px 12px; color: #6B6B6B;">
+                            {{ dispute.renter.username }} <span style="color: #B0B2A0;">→</span> {{ dispute.item.owner.username }}
+                        </td>
+                        <td style="padding: 14px 12px;">
+                            {% if dispute.deposit_to_owner %}
+                                <span style="background: #FFEBEE; color: #C62828; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">Владелец</span>
+                            {% elif dispute.deposit_returned %}
+                                <span style="background: #E8F5E9; color: #2E7D32; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">Арендатор</span>
+                            {% else %}
+                                <span style="background: #F5F5F5; color: #757575; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">Завершён</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 14px 12px; color: #B0B2A0; font-size: 13px;">{{ dispute.dispute_resolved_at|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+
+
+{% block breadcrumb %}
+› <span>Уведомления</span>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <h1 style="margin-bottom: 24px;">Уведомления</h1>
+    
+    {% if notifications %}
+        {% for notif in notifications %}
+        <div class="card" style="margin-bottom: 12px; background: {% if not notif.is_read %}#fff3e0{% else %}white{% endif %}; border-left: 3px solid {% if not notif.is_read %}#ff9800{% else %}#eaeaea{% endif %};">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <h3 style="font-size: 15px; margin-bottom: 6px; {% if not notif.is_read %}color: #e65100;{% endif %}">{{ notif.title }}</h3>
+                    <p style="color: #666; font-size: 13px; margin-bottom: 8px;">{{ notif.message }}</p>
+                    <small style="color: #999; font-size: 11px;">{{ notif.created_at|date:"d.m.Y H:i" }}</small>
+                </div>
+                {% if not notif.is_read %}
+                    <a href="{% url 'mark_as_read' notif.id %}" class="btn-outline" style="padding: 6px 14px; font-size: 12px; text-decoration: none;">Прочитать</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="card" style="text-align: center; padding: 60px;">
+            <i class="fas fa-bell-slash" style="font-size: 48px; color: #ccc; margin-bottom: 16px;"></i>
+            <p style="color: #888;">У вас нет уведомлений</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

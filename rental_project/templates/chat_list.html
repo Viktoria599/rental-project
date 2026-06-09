@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 0 auto;">
+    <h1 style="margin-bottom: 28px; color: #2D2D2D; font-size: 26px; font-weight: 700;">Мои чаты</h1>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for booking in bookings %}
+        <a href="/chat/{{ booking.id }}/" style="text-decoration: none;">
+            <div style="background: #FFFFFF; border-radius: 16px; border: 1px solid #E8E9D6; padding: 16px; transition: all 0.2s; cursor: pointer;">
+                
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <!-- Аватар -->
+                    <div style="width: 44px; height: 44px; background: #A5AFF5; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <span style="color: #FFFFFF; font-size: 18px; font-weight: 600;">
+                            {% if user == booking.renter %}
+                                {{ booking.item.owner.username|first|upper }}
+                            {% else %}
+                                {{ booking.renter.username|first|upper }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <!-- Информация -->
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                            <span style="font-size: 15px; font-weight: 600; color: #2D2D2D;">{{ booking.item.name }}</span>
+                            <span style="background: 
+                                {% if booking.status == 'completed' %}#F5F5F5
+                                {% elif booking.status == 'cancelled' %}#FFEBEE
+                                {% else %}#E8F5E9{% endif %};
+                                color: 
+                                {% if booking.status == 'completed' %}#757575
+                                {% elif booking.status == 'cancelled' %}#C62828
+                                {% else %}#2E7D32{% endif %};
+                                padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 500;">
+                                {{ booking.get_status_display }}
+                            </span>
+                        </div>
+                        
+                        <p style="margin: 0 0 4px 0; font-size: 12px; color: #6B6B6B;">
+                            {% if user == booking.renter %}
+                                {{ booking.item.owner.get_full_name|default:booking.item.owner.username }}
+                            {% else %}
+                                {{ booking.renter.get_full_name|default:booking.renter.username }}
+                            {% endif %}
+                        </p>
+                        
+                        {% with last_msg=booking.messages.last %}
+                        <p style="margin: 0; font-size: 12px; color: {% if last_msg %}#2D2D2D{% else %}#B0B2A0{% endif %}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {% if last_msg %}
+                                {{ last_msg.text|truncatechars:35 }}
+                            {% else %}
+                                Нет сообщений
+                            {% endif %}
+                        </p>
+                        {% endwith %}
+                    </div>
+                    
+                    <!-- Дата справа -->
+                    <div style="flex-shrink: 0; text-align: right;">
+                        {% with last_msg=booking.messages.last %}
+                        <span style="font-size: 10px; color: #B0B2A0; white-space: nowrap;">
+                            {% if last_msg %}
+                                {{ last_msg.created_at|date:"d.m.Y" }}
+                            {% else %}
+                                {{ booking.created_at|date:"d.m.Y" }}
+                            {% endif %}
+                        </span>
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% empty %}
+        <div style="background: #FFFFFF; border-radius: 16px; text-align: center; padding: 50px 20px; border: 1px solid #E8E9D6;">
+            <p style="color: #A5AFF5; font-size: 16px; font-weight: 500; margin: 0;">У вас пока нет чатов</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    a div:hover {
+        background: #F7F7E7 !important;
+        border-color: #A5AFF5 !important;
+    }
+</style>
+{% endblock %}

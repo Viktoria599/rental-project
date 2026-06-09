@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}Оформление аренды - TempThings{% endblock %}
+
+{% block breadcrumb %}
+› <a href="/items/">Каталог</a> › <a href="/items/{{ item.id }}/">{{ item.name }}</a> › <span>Оформление</span>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div class="card">
+        <h1>Оформление аренды</h1>
+        
+        <div style="background: #f8f9fa; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+            <h3 style="margin-bottom: 16px;">{{ item.name }}</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                <div>
+                    <p><strong>Цена:</strong> {{ item.price_per_hour }} ₽/час</p>
+                    <p><strong>Залог:</strong> {{ item.deposit_amount }} ₽</p>
+                </div>
+                <div>
+                    <p><strong>Город:</strong> {{ item.city }}</p>
+                    <p><strong>Владелец:</strong> {{ item.owner.first_name|default:item.owner.username }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <form method="post" action="{% url 'create_booking' item.id %}">
+            {% csrf_token %}
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500;">Дата и время начала *</label>
+                    <input type="datetime-local" name="start_datetime" id="start_datetime" required 
+                           style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500;">Дата и время окончания *</label>
+                    <input type="datetime-local" name="end_datetime" id="end_datetime" required 
+                           style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px;">
+                </div>
+            </div>
+            
+            <div id="calculation" style="background: #f0f7ff; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px;">Детали расчета</h3>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                    <span>Количество времени:</span>
+                    <strong id="durationDisplay">0</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                    <span>Стоимость аренды:</span>
+                    <strong id="rentalCost">0 ₽</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                    <span>Залог (возвратный):</span>
+                    <strong>{{ item.deposit_amount }} ₽</strong>
+                </div>
+                <hr style="margin: 12px 0; border-color: #c8e0ff;">
+                <div style="display: flex; justify-content: space-between; font-size: 18px;">
+                    <span><strong>Итого к оплате:</strong></span>
+                    <span style="color: #1a1a1a; font-size: 24px; font-weight: 700;" id="totalAmount">0 ₽</span>
+                </div>
+                <p style="font-size: 12px; color: #666; margin-top: 12px;">
+                    * Залог будет возвращен после успешного завершения аренды
+                </p>
+            </div>
+            
+            <div style="display: flex; gap: 16px;">
+                <button type="submit" class="btn" style="flex: 1; justify-content: center; padding: 14px;">
+                    Отправить заявку
+                </button>
+                <a href="/items/{{ item.id }}/" class="btn-outline" style="flex: 0.3; justify-content: center; display: flex; align-items: center; text-decoration: none;">
+                    Назад
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const pricePerHour = parseFloat("{{ item.price_per_hour }}");
+    const depositAmount = parseFloat("{{ item.deposit_amount }}");
+    
+    const startInput = document.getElementById('start_datetime');
+    const endInput = document.getElementById('end_datetime');
+    const durationDisplay = document.getElementById('durationDisplay');
+    const rentalCostSpan = document.getElementById('rentalCost');
+    const totalSpan = document.getElementById('totalAmount');
+    
+    function formatDuration(minutes) {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        
+        if (hours === 0) {
+            return mins + ' минут';
+        } else if (mins === 0) {
+            return hours + ' ' + getHourWord(hours);
+        } else {
+            return hours + ' ' + getHourWord(hours) + ' ' + mins + ' минут';
+        }
+    }
+    
+    function getHourWord(hours) {
+        if (hours % 10 === 1 && hours % 100 !== 11) return 'час';
+        if ([2, 3, 4].includes(hours % 10) && ![12, 13, 14].includes(hours % 100)) return 'часа';
+        return 'часов';
+    }
+    
+    function calculateTotal() {
+        if (!startInput.value || !endInput.value) {
+            durationDisplay.textContent = '0';
+            rentalCostSpan.textContent = '0 ₽';
+            totalSpan.textContent = '0 ₽';
+            return;
+        }
+        
+        const start = new Date(startInput.value);
+        const end = new Date(endInput.value);
+        
+        if (end <= start) {
+            durationDisplay.textContent = '0';
+            rentalCostSpan.textContent = '0 ₽';
+            totalSpan.textContent = '0 ₽';
+            alert('Время окончания должно быть позже времени начала');
+            return;
+        }
+        
+        const diffMinutes = (end - start) / (1000 * 60);
+        
+        if (diffMinutes < 60) {
+            alert('Минимальная аренда — 1 час');
+            durationDisplay.textContent = '0';
+            rentalCostSpan.textContent = '0 ₽';
+            totalSpan.textContent = '0 ₽';
+            return;
+        }
+        
+        const hours = Math.ceil(diffMinutes / 60);
+        const rentalCost = hours * pricePerHour;
+        const total = rentalCost + depositAmount;
+        
+        durationDisplay.textContent = formatDuration(Math.round(diffMinutes));
+        rentalCostSpan.textContent = rentalCost.toFixed(2) + ' ₽';
+        totalSpan.textContent = total.toFixed(2) + ' ₽';
+    }
+    
+    // Устанавливаем минимальное значение на текущее время (прямо сейчас)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    const minDateTime = year + '-' + month + '-' + day + 'T' + hours + ':' + minutes;
+    
+    startInput.min = minDateTime;
+    endInput.min = minDateTime;
+    
+    startInput.addEventListener('change', calculateTotal);
+    endInput.addEventListener('change', calculateTotal);
+    
+    // Устанавливаем значения по умолчанию
+    startInput.value = minDateTime;
+    
+    const defaultEnd = new Date(now);
+    defaultEnd.setHours(now.getHours() + 2);
+    const endYear = defaultEnd.getFullYear();
+    const endMonth = String(defaultEnd.getMonth() + 1).padStart(2, '0');
+    const endDay = String(defaultEnd.getDate()).padStart(2, '0');
+    const endHour = String(defaultEnd.getHours()).padStart(2, '0');
+    const endMinute = String(defaultEnd.getMinutes()).padStart(2, '0');
+    endInput.value = endYear + '-' + endMonth + '-' + endDay + 'T' + endHour + ':' + endMinute;
+    
+    calculateTotal();
+</script>
+
+<style>
+    .card {
+        background: #FCFAFA;
+        border-radius: 24px;
+        padding: 32px;
+        border: 1px solid #ECECEC;
+    }
+    .card h1 {
+        margin-bottom: 24px;
+    }
+    .btn {
+        background: #3B3B3B;
+        color: #FCFAFA;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 40px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn:hover {
+        background: #ECCACB;
+        color: #3B3B3B;
+    }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #ECECEC;
+        padding: 12px 24px;
+        border-radius: 40px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #3B3B3B;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-outline:hover {
+        border-color: #3B3B3B;
+    }
+    hr {
+        border: none;
+        border-top: 1px solid #ECECEC;
+    }
+</style>
+{% endblock %}

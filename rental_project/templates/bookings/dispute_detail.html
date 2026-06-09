@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Спор по возврату - TempThings{% endblock %}
+
+{% block breadcrumb %}
+<a href="/bookings/my/">Мои бронирования</a> › {{ booking.item.name }} › Спор
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 0 auto;">
+    <div class="card" style="margin-bottom: 24px;">
+        <h2 style="margin-bottom: 8px;">Спор по возврату</h2>
+        <p style="color: #666;">Вещь: <strong>{{ booking.item.name }}</strong></p>
+    </div>
+
+    <div class="card" style="margin-bottom: 24px; background: #fff3e0; border-color: #ffcc02;">
+        <h3 style="margin-bottom: 12px; color: #e65100;">Жалоба владельца</h3>
+        <p style="margin: 0 0 8px 0;"><strong>Владелец:</strong> {{ booking.item.owner.get_full_name|default:booking.item.owner.username }}</p>
+        <p style="margin: 0 0 8px 0;"><strong>Дата жалобы:</strong> {{ booking.dispute_created_at|date:"d.m.Y H:i" }}</p>
+        <p style="margin: 0 0 16px 0;"><strong>Сумма залога:</strong> {{ booking.deposit_amount|floatformat:2 }} ₽</p>
+
+        <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+            <p style="margin: 0 0 8px 0; font-weight: 500;">Описание повреждений:</p>
+            <p style="margin: 0; white-space: pre-wrap;">{{ booking.damage_description }}</p>
+        </div>
+
+        {% if booking.damage_photo %}
+        <div style="margin-bottom: 16px;">
+            <p style="font-weight: 500; margin-bottom: 8px;">Фото повреждений:</p>
+            <img src="{{ booking.damage_photo.url }}" style="max-width: 100%; border-radius: 12px;">
+        </div>
+        {% endif %}
+
+        {% if booking.damage_video %}
+        <div style="margin-bottom: 16px;">
+            <p style="font-weight: 500; margin-bottom: 8px;">Видео повреждений:</p>
+            <video controls style="max-width: 100%; border-radius: 12px;">
+                <source src="{{ booking.damage_video.url }}" type="video/mp4">
+            </video>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if user == booking.renter and booking.status == 'disputed' and not booking.needs_moderation %}
+    <div class="card">
+        <h3 style="margin-bottom: 16px;">Ваше решение</h3>
+        <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+            Ознакомьтесь с жалобой владельца. Если вы согласны с повреждениями — залог перейдёт владельцу.
+            Если не согласны — спор будет передан модератору.
+        </p>
+
+        <div style="display: flex; gap: 12px;">
+    <a href="{% url 'bookings:dispute_accept' booking.id %}" class="btn" style="background: #f44336; flex: 1; justify-content: center;"
+       onclick="return confirm('Вы подтверждаете вину? Залог {{ booking.deposit_amount }} ₽ будет передан владельцу.')">
+        Признать вину
+    </a>
+    <a href="{% url 'bookings:dispute_contest' booking.id %}" class="btn" style="background: #ff9800; flex: 1; justify-content: center;"
+       onclick="return confirm('Вы хотите оспорить жалобу? Решение примет модератор.')">
+        Оспорить
+    </a>
+    <a href="/bookings/my/" class="btn-outline">Назад</a>
+</div>
+    </div>
+    {% elif booking.needs_moderation %}
+    <div class="card" style="background: #e3f2fd; border-color: #90caf9;">
+        <p style="margin: 0; color: #1565c0; text-align: center;">
+            Спор передан на рассмотрение модератору. Ожидайте решения в течение 24 часов.
+        </p>
+    </div>
+    {% endif %}
+
+    {% if booking.status == 'completed' and booking.deposit_to_owner %}
+    <div class="card" style="background: #ffebee; text-align: center;">
+        <p style="margin: 0; color: #c62828;">Спор решён в пользу владельца. Залог удержан.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

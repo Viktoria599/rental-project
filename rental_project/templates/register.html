@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Регистрация - TempThings{% endblock %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 0 auto;">
+    <div style="background: #FFFFFF; border-radius: 24px; padding: 32px; border: 1px solid #E8E9D6; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+        <h1 style="margin-bottom: 24px; color: #2D2D2D; font-size: 24px; text-align: center;">Регистрация</h1>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div style="margin-bottom: 16px;">
+                <label for="id_email" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px; color: #2D2D2D;">Email *</label>
+                <input type="email" name="email" id="id_email" value="{{ form.email.value|default:'' }}" required
+                       style="width: 100%; padding: 12px 14px; border: 1px solid #D0D2C0; border-radius: 12px; font-size: 14px; box-sizing: border-box; background: #F7F7E7;">
+                {% if form.email.errors %}
+                    <p style="color: #e74c3c; font-size: 12px; margin-top: 5px;">{{ form.email.errors.0 }}</p>
+                {% endif %}
+                <small style="color: #B0B2A0;">Email будет использоваться для входа</small>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label for="id_username" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px; color: #2D2D2D;">Имя (как вас будут видеть)</label>
+                <input type="text" name="username" id="id_username" value="{{ form.username.value|default:'' }}"
+                       style="width: 100%; padding: 12px 14px; border: 1px solid #D0D2C0; border-radius: 12px; font-size: 14px; box-sizing: border-box; background: #F7F7E7;">
+                {% if form.username.errors %}
+                    <p style="color: #e74c3c; font-size: 12px; margin-top: 5px;">{{ form.username.errors.0 }}</p>
+                {% endif %}
+                <small style="color: #B0B2A0;">Не обязательно. Если не заполнить, будет использована часть email</small>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label for="id_password1" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px; color: #2D2D2D;">Пароль *</label>
+                <input type="password" name="password1" id="id_password1" required
+                       style="width: 100%; padding: 12px 14px; border: 1px solid #D0D2C0; border-radius: 12px; font-size: 14px; box-sizing: border-box; background: #F7F7E7;">
+                {% if form.password1.errors %}
+                    <p style="color: #e74c3c; font-size: 12px; margin-top: 5px;">{{ form.password1.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <div style="margin-bottom: 24px;">
+                <label for="id_password2" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px; color: #2D2D2D;">Подтверждение пароля *</label>
+                <input type="password" name="password2" id="id_password2" required
+                       style="width: 100%; padding: 12px 14px; border: 1px solid #D0D2C0; border-radius: 12px; font-size: 14px; box-sizing: border-box; background: #F7F7E7;">
+                {% if form.password2.errors %}
+                    <p style="color: #e74c3c; font-size: 12px; margin-top: 5px;">{{ form.password2.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <button type="submit" style="width: 100%; background: #A5AFF5; color: #FFFFFF; border: none; padding: 12px; border-radius: 40px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                Зарегистрироваться
+            </button>
+        </form>
+        
+        <p style="text-align: center; margin-top: 20px; font-size: 13px; color: #6B6B6B;">
+            Уже есть аккаунт? <a href="/login/" style="color: #A5AFF5; text-decoration: none; font-weight: 500;">Войти</a>
+        </p>
+    </div>
+</div>
+
+<style>
+    input:focus {
+        outline: none;
+        border-color: #A5AFF5 !important;
+        background: #FFFFFF !important;
+    }
+    button:hover {
+        background: #8F9AED !important;
+    }
+</style>
+{% endblock %}

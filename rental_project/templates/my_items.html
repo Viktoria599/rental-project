@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="breadcrumbs">
+    <a href="/">Главная</a> > <span>Мои вещи</span>
+</div>
+
+<div class="page-header">
+    <h1>Мои вещи</h1>
+    <button class="btn-add" id="openModalBtn">
+        + Добавить вещь
+    </button>
+</div>
+
+{% if items %}
+    <div class="items-grid">
+        {% for item in items %}
+            <div class="card">
+                <div class="card-image">
+                    {% if item.main_photo %}
+                        <img src="{{ item.main_photo.url }}" alt="{{ item.name }}">
+                    {% else %}
+                        <i class="fas fa-box"></i>
+                    {% endif %}
+                </div>
+                <div class="card-content">
+                    <div class="card-title">{{ item.name }}</div>
+                    <div class="card-price">
+                        {{ item.price_per_hour }} ₽ <span style="font-size: 12px;">/час</span>
+                    </div>
+                    <div class="card-city"><i class="fas fa-map-marker-alt"></i> {{ item.city }}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                        <span class="card-status status-{{ item.status }}">
+                            {% if item.status == 'available' %} Доступна
+                            {% elif item.status == 'busy' %} Занята
+                            {% else %} Недоступна{% endif %}
+                        </span>
+                        <div style="display: flex; gap: 12px;">
+                            <button type="button" class="edit-item-btn"
+                                data-id="{{ item.id }}"
+                                data-name="{{ item.name }}"
+                                data-description="{{ item.description }}"
+                                data-city="{{ item.city }}"
+                                data-price="{{ item.price_per_hour }}"
+                                data-deposit="{{ item.deposit_amount }}"
+                                data-category="{{ item.category.id }}"
+                                data-photo="{% if item.main_photo %}{{ item.main_photo.url }}{% endif %}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+
+                            <a href="/items/{{ item.id }}/toggle-status/" class="toggle-status-btn"
+                               onclick="return confirm('{% if item.status == 'available' %}Сделать вещь НЕДОСТУПНОЙ на время? Она пропадёт из каталога.{% else %}Снова сделать вещь ДОСТУПНОЙ? Она появится в каталоге.{% endif %}')">
+                                {% if item.status == 'available' %}
+                                    <i class="fas fa-eye-slash"></i>
+                                {% else %}
+                                    <i class="fas fa-eye"></i>
+                                {% endif %}
+                            </a>
+
+                            <a href="/items/{{ item.id }}/delete/" class="delete-item" onclick="return confirm('Удалить объявление навсегда?')">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <i class="fas fa-box-open"></i>
+        <p>У вас пока нет объявлений</p>
+        <button class="btn-add" id="emptyStateBtn">
+            + Создать объявление
+        </button>
+    </div>
+{% endif %}
+
+<!-- Модальное окно -->
+<div id="addItemModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Добавить вещь</h2>
+            <button type="button" class="close-modal">&times;</button>
+        </div>
+        <form method="POST" id="itemForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="item_id" id="edit_item_id" value="">
+
+            <div class="form-group">
+                <label for="id_category">Категория</label>
+                <select name="category" id="id_category" class="form-control" required>
+                    <option value="">Выберите категорию</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="id_name">Название вещи</label>
+                <input type="text" name="name" id="id_name" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label for="id_description">Описание</label>
+                <textarea name="description" id="id_description" class="form-control" rows="4" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="id_city">Город</label>
+                <input type="text" name="city" id="id_city" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label for="id_price_per_hour">Цена за час (₽)</label>
+                <input type="number" name="price_per_hour" id="id_price_per_hour" class="form-control" step="1" min="0" required min="0" max="100000">
+                <small>Укажите стоимость одного часа аренды</small>
+            </div>
+
+            <div class="form-group">
+                <label for="id_deposit_amount">Залог (₽)</label>
+                <input type="number" name="deposit_amount" id="id_deposit_amount" class="form-control" step="1" min="0" min="0" max="500000">
+                <small>Залог возвращается после возврата вещи</small>
+            </div>
+
+            <div class="form-group">
+                <label for="id_main_photo">Фото товара</label>
+                <input type="file" name="main_photo" id="id_main_photo" class="form-control" accept="image/*">
+                <small>Загрузите фото вещи (jpg, png)</small>
+            </div>
+
+            <div id="current_photo" style="display: none;">
+                <label>Текущее фото</label>
+                <img id="current_photo_img" src="" style="max-width: 150px; border-radius: 8px;">
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn">Сохранить</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const modal = document.getElementById('addItemModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const itemForm = document.getElementById('itemForm');
+        const editItemId = document.getElementById('edit_item_id');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function openAddModal() {
+            modalTitle.textContent = 'Добавить вещь';
+            itemForm.action = '/items/add/';
+            editItemId.value = '';
+            document.getElementById('id_name').value = '';
+            document.getElementById('id_description').value = '';
+            document.getElementById('id_city').value = '';
+            document.getElementById('id_price_per_hour').value = '';
+            document.getElementById('id_deposit_amount').value = '';
+            document.getElementById('id_category').value = '';
+            document.getElementById('current_photo').style.display = 'none';
+            submitBtn.textContent = 'Опубликовать';
+            modal.classList.add('active');
+        }
+
+        function openEditModal(itemId, name, description, city, price, deposit, categoryId, photoUrl) {
+            modalTitle.textContent = 'Редактировать вещь';
+            itemForm.action = '/items/' + itemId + '/edit/';
+            editItemId.value = itemId;
+
+            document.getElementById('id_name').value = name || '';
+            document.getElementById('id_description').value = description || '';
+            document.getElementById('id_city').value = city || '';
+            document.getElementById('id_price_per_hour').value = price || '';
+            document.getElementById('id_deposit_amount').value = deposit || '';
+            document.getElementById('id_category').value = categoryId || '';
+
+            if (photoUrl && photoUrl !== 'None') {
+                document.getElementById('current_photo_img').src = photoUrl;
+                document.getElementById('current_photo').style.display = 'block';
+            } else {
+                document.getElementById('current_photo').style.display = 'none';
+            }
+
+            submitBtn.textContent = 'Сохранить изменения';
+            modal.classList.add('active');
+        }
+
+        // Кнопка добавления
+        const addBtns = document.querySelectorAll('#openModalBtn, #emptyStateBtn');
+        addBtns.forEach(function(btn) {
+            if (btn) btn.addEventListener('click', openAddModal);
+        });
+
+        // Кнопки редактирования
+        document.querySelectorAll('.edit-item-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const itemId = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name');
+                const description = this.getAttribute('data-description');
+                const city = this.getAttribute('data-city');
+                const price = this.getAttribute('data-price');
+                const deposit = this.getAttribute('data-deposit');
+                const categoryId = this.getAttribute('data-category');
+                const photoUrl = this.getAttribute('data-photo');
+
+                openEditModal(itemId, name, description, city, price, deposit, categoryId, photoUrl);
+            });
+        });
+
+        // Закрытие
+        const closeBtn = document.querySelector('.close-modal');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                modal.classList.remove('active');
+            });
+        }
+
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) modal.classList.remove('active');
+            });
+        }
+    })();
+</script>
+
+<style>
+    .breadcrumbs { margin-bottom: 24px; font-size: 13px; color: #666; }
+    .breadcrumbs a { color: #666; text-decoration: none; }
+    .breadcrumbs a:hover { color: #000; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+    h1 { font-size: 28px; font-weight: 600; color: #1a1a1a; margin: 0; }
+    .btn-add { background: #1a1a1a; color: white; border: none; padding: 8px 20px; border-radius: 40px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .btn-add:hover { background: #333; transform: translateY(-1px); }
+    .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+    .card { background: white; border-radius: 16px; transition: all 0.2s ease; border: 1px solid #eaeaea; overflow: hidden; }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.05); border-color: #d0d0d0; }
+    .card-image { height: 180px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 48px; overflow: hidden; }
+    .card-image img { width: 100%; height: 100%; object-fit: cover; }
+    .card-content { padding: 16px; }
+    .card-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: #1a1a1a; }
+    .card-price { color: #1a1a1a; font-weight: 600; font-size: 18px; }
+    .card-city { font-size: 12px; color: #888; margin-top: 4px; }
+    .card-status { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .status-available { background: #e8f5e9; color: #2e7d32; }
+    .status-busy { background: #fff3e0; color: #ed6c02; }
+    .status-unavailable { background: #ffebee; color: #c62828; }
+    .empty-state { text-align: center; padding: 60px 20px; background: white; border: 1px solid #eaeaea; border-radius: 20px; }
+    .empty-state i { font-size: 64px; color: #ddd; margin-bottom: 16px; }
+    .empty-state p { margin-bottom: 20px; color: #888; }
+    .edit-item-btn { background: none; border: none; color: #999; cursor: pointer; font-size: 16px; }
+    .edit-item-btn:hover { color: #2196f3; }
+    .delete-item { background: none; border: none; color: #999; cursor: pointer; font-size: 16px; text-decoration: none; }
+    .delete-item:hover { color: #dc3545; }
+    .toggle-status-btn { background: none; border: none; color: #999; cursor: pointer; font-size: 16px; text-decoration: none; }
+    .toggle-status-btn:hover { color: #ff9800; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal.active { display: flex; }
+    .modal-content { background: white; border-radius: 20px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto; padding: 28px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #eaeaea; }
+    .modal-header h2 { font-size: 20px; font-weight: 600; color: #1a1a1a; margin: 0; }
+    .close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+    .close-modal:hover { color: #000; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 13px; color: #333; }
+    .form-control { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; font-family: inherit; background: white; box-sizing: border-box; }
+    .form-control:focus { outline: none; border-color: #1a1a1a; }
+    textarea.form-control { resize: vertical; }
+    .btn-submit { width: 100%; background: #1a1a1a; color: white; border: none; padding: 12px; border-radius: 40px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
+    .btn-submit:hover { background: #333; }
+    small { display: block; margin-top: 4px; color: #999; font-size: 11px; }
+    #current_photo { margin-top: 10px; }
+    #current_photo img { border: 1px solid #ddd; padding: 4px; }
+</style>
+{% endblock %}
