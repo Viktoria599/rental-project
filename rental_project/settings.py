@@ -1,13 +1,18 @@
 from pathlib import Path
 import os
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-key-for-diplom-2024'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-key-for-diplom-2024')
 
 DEBUG = False
 
-ALLOWED_HOSTS = ['victoriasevrikeeva.pythonanywhere.com', 'www.victoriasevrikeeva.pythonanywhere.com']
+ALLOWED_HOSTS = [
+    'your-app-name.timeweb.cloud',  # ЗАМЕНИТЕ на ваш URL в Timeweb
+    'localhost',
+    '127.0.0.1',
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -25,6 +30,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # ДОБАВИТЬ для статики
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -54,10 +60,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'rental_project.wsgi.application'
 
+# БАЗА ДАННЫХ PostgreSQL (через переменные окружения)
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'postgres'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
@@ -72,12 +83,17 @@ TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
 
+# СТАТИЧЕСКИЕ ФАЙЛЫ
 STATIC_URL = '/static/'
-STATIC_ROOT = '/home/VictoriaSevrikeeva/renatl_project/static/'
-STATICFILES_DIRS = []
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
+# МЕДИА ФАЙЛЫ
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/home/VictoriaSevrikeeva/renatl_project/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# WhiteNoise для статики
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
