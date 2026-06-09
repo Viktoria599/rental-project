@@ -1,5 +1,7 @@
-from pathlib import Path
+import sys
+import os
 import dj_database_url
+from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
