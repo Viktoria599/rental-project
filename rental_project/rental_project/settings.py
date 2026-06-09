@@ -1,5 +1,4 @@
 from pathlib import Path
-import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -7,7 +6,7 @@ SECRET_KEY = 'django-insecure-key-for-diplom-2024'
 
 DEBUG = False
 
-ALLOWED_HOSTS = ['victoriasevrikeeva.pythonanywhere.com', 'www.victoriasevrikeeva.pythonanywhere.com']
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -25,6 +24,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -56,7 +56,7 @@ WSGI_APPLICATION = 'rental_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        ENGINE': 'django.db.backends.sqlite3',
+        'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
@@ -73,11 +73,11 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '/home/VictoriaSevrikeeva/renatl_project/static/'
-STATICFILES_DIRS = []
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/home/VictoriaSevrikeeva/renatl_project/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
