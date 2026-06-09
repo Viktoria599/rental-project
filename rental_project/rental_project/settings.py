@@ -7,7 +7,7 @@ SECRET_KEY = 'django-insecure-key-for-diplom-2024'
 
 DEBUG = False
 
-ALLOWED_HOSTS = ['victoriasevrikeeva.pythonanywhere.com', 'www.victoriasevrikeeva.pythonanywhere.com']
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
